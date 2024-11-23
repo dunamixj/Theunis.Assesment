@@ -1,0 +1,7 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/Theunis.Assesment/Theunis.Assesment.Web/obj
+/Theunis.Assesment/.vs/Theunis.Assesment
+/.vs
