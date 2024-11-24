@@ -37,5 +37,31 @@ namespace Theunis.Assesment.Web.Data.Repository
             }
             return lstTansactions; // Returning the transaction list
         }
+
+        public void Save()
+        {
+            _context.SaveChanges();
+        }
+
+        private bool _disposed = false;
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!this._disposed)
+            {
+                if (disposing)
+                {
+                    _context.Dispose();
+                }
+            }
+            this._disposed = true;
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
     }
 }
+

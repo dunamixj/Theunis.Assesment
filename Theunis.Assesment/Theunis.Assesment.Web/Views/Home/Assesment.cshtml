@@ -1,39 +1,16 @@
-﻿@model Theunis.Assesment.Models.FileUploadViewModel
+﻿@model FileUploadViewModel
 @{
-    Layout = null;
+    ViewData["Title"] = "Upload your xml/csv Transaction file";
 }
-
-<!DOCTYPE html>
-
-<html>
-<head>
-    <meta name="viewport" content="width=device-width" />
-    <title>Index</title>
-    <style type="text/css">
-        body {
-            font-family: Arial;
-            font-size: 10pt;
-        }
-    </style>
-</head>
-<body>
-    <form method="post" enctype="multipart/form-data" asp-controller="Home" asp-action="Index">
-        @Html.AntiForgeryToken()
-        <span>Select File for Upload:</span>
-
-        <input type="file" asp-for="UploadedFile" name="UploadedFile" accept=".xml,.csv" />
-        <span asp-validation-for="UploadedFile" style="color:red"></span>
-
-        <input type="submit" value="Upload" />
-        <br />
-
-        <span style="color:green">@Html.Raw(ViewBag.Message)</span>
-        <span style="color:red">@Html.Raw(ViewBag.ErrorMessage)</span>
-
-
-    </form>
-</body>
-
-
-
-</html>
+<h1 class="display-4">Welcome!</h1>
+<h2>Upload File</h2>
+<form asp-action="assesment" enctype="multipart/form-data" method="post">
+    <div class="form-group">
+        <input type="file" asp-for="File" id='fileinput' class="form-control" accept=".csv,.xml" />
+    </div>
+    <button id="submit" type="submit" class="btn btn-primary">Upload</button>
+</form>
+@if (ViewBag.Message != null)
+{
+    <p id="valresult">@ViewBag.Message</p>
+}

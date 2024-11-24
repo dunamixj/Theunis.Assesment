@@ -6,6 +6,6 @@ namespace Theunis.Assesment.Web.Models
     {
         [Required(ErrorMessage = "Please select a file.")]
         [DataType(DataType.Upload)]
-        public IFormFile UploadedFile { get; set; }
+        public IFormFile File { get; set; }
     }
 }
