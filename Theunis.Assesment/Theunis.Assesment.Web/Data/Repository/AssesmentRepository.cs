@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Theunis.Assesment.Web.Controllers;
 using Theunis.Assesment.Web.Data.Models;
 using Theunis.Assesment.Web.Data.Repository.Interfaces;
@@ -36,6 +37,23 @@ namespace Theunis.Assesment.Web.Data.Repository
                 _logger.LogError(ex, "Class: AssesmentRepository - Method: GetTransactions");
             }
             return lstTansactions; // Returning the transaction list
+        }
+
+        public void AddTransactions(List<Transaction> lstTransactions)
+        {
+            try
+            {
+                foreach (var item in lstTransactions)
+                {
+                    _context.Transactions.Add(item);
+                }
+                _context.SaveChanges();
+            }
+            catch (Exception ex)
+            {
+                // Log exception to the EventLog table in the database
+                _logger.LogError(ex, "Class: AssesmentRepository - Method: GetTransactions");
+            }
         }
 
         public void Save()

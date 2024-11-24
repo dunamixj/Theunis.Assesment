@@ -1,7 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using NuGet.Protocol.Core.Types;
 using System.Diagnostics;
 using Theunis.Assesment.Web.Common;
+using Theunis.Assesment.Web.Data.Models;
+using Theunis.Assesment.Web.Data.Repository.Interfaces;
 using Theunis.Assesment.Web.Models;
 
 namespace Theunis.Assesment.Web.Controllers
@@ -10,11 +13,12 @@ namespace Theunis.Assesment.Web.Controllers
     {
         private readonly IWebHostEnvironment _environment;
         private readonly ILogger<HomeController> _logger;
-
-        public HomeController(ILogger<HomeController> logger, IWebHostEnvironment environment)
+        public IAssesmentRepository _repository;
+        public HomeController(ILogger<HomeController> logger, IWebHostEnvironment environment, IAssesmentRepository repository)
         {
             _logger = logger;
             _environment = environment;
+            _repository = repository;
         }
 
         public IActionResult Index()
@@ -78,6 +82,20 @@ namespace Theunis.Assesment.Web.Controllers
 
                         if (IsDataSetValid(transactions))
                         {
+                            var validTransactions = (from t in transactions
+                                                     select new Transaction
+                                                     {
+                                                         AccountNumber = t.AccountNumber,
+                                                         Amount = t.Amount,
+                                                         CurrencyCode = t.CurrencyCode,
+                                                         Status = t.Status,
+                                                         TransactionDate = t.TransactionDate,
+                                                         TransactionId = t.TransactionId,
+                                                     }).ToList();
+                            if (validTransactions.Any())
+                            {
+                                _repository.AddTransactions(validTransactions);
+                            }
                             List<string> uploadedFiles = new List<string>();
                             using (FileStream stream = new FileStream(Path.Combine(path, fileName), FileMode.Create))
                             {

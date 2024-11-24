@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Theunis.Assesment.Web.Data;
+using Theunis.Assesment.Web.Data.Repository;
+using Theunis.Assesment.Web.Data.Repository.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +18,8 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddEntityFrameworkStores<ApplicationDbContext>();
+
+builder.Services.AddTransient<IAssesmentRepository, AssesmentRepository>();
 
 builder.Services.AddControllersWithViews();
 
