@@ -70,7 +70,8 @@ namespace Theunis.Assesment.Web.Controllers
                         }
                         else if (fileType == "csv")
                         {
-
+                            CsvFileUtilities xmlUtil = new CsvFileUtilities();
+                            transactions = await xmlUtil.ValidateCsvDocumentAsync(uploadFile, path);
                         }
                         else
                         {
