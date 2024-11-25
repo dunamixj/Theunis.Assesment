@@ -2,6 +2,7 @@
 {
     public class Utilities
     {
+        
         public static string logFilePath = Directory.GetCurrentDirectory() + "\\AuditLogs\\";
         public static string ErrorlogFilePath = Directory.GetCurrentDirectory() + "\\ErrorLogs\\";
 

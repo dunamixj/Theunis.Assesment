@@ -39,7 +39,7 @@ namespace Theunis.Assesment.Web.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Assesment(FileUploadViewModel model)
+        public async Task<IActionResult> Assesment(FileUploadViewModel model)
         {
             string fileName = "";
             try
@@ -65,7 +65,7 @@ namespace Theunis.Assesment.Web.Controllers
                         if (fileType == "xml")
                         {
                             XmlFileUtilities xmlUtil = new XmlFileUtilities();
-                            transactions = xmlUtil.ValidateXmlDocument(uploadFile, path);
+                            transactions = await xmlUtil.ValidateXmlDocumentAsync(uploadFile, path);
                             
                         }
                         else if (fileType == "csv")
@@ -103,10 +103,7 @@ namespace Theunis.Assesment.Web.Controllers
                                 uploadedFiles.Add(fileName);
                                 ViewBag.Message += string.Format("<b>{0}</b> uploaded.<br />", fileName);
                             }
-
                         }
-
-                        
                     }
                     return View();
                 }
