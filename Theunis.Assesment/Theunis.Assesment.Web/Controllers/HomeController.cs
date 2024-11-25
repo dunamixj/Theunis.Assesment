@@ -31,95 +31,6 @@ namespace Theunis.Assesment.Web.Controllers
             return View();
         }
 
-        [Authorize]
-        public IActionResult Assesment()
-        {
-            return View();
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Assesment(FileUploadViewModel model)
-        {
-            string fileName = "";
-            try
-            {
-                if (ModelState.IsValid)
-                {
-                    var uploadFile = model.File;
-
-                    fileName = Path.GetFileName(model.File.FileName);
-                    var fileTypeArr = fileName.Split(".");
-                    var fileType = fileTypeArr[1];
-
-                    string wwwPath = this._environment.WebRootPath;
-                    string contentPath = this._environment.ContentRootPath;
-
-                    string path = Path.Combine(this._environment.WebRootPath, "Uploads");
-                    if (!Directory.Exists(path))
-                    {
-                        Directory.CreateDirectory(path);
-                    }
-                    if(CheckFileSize(uploadFile) || CheckFileType(fileType)){
-                        List<TransactionViewModel> transactions = new List<TransactionViewModel>();
-                        if (fileType == "xml")
-                        {
-                            XmlFileUtilities xmlUtil = new XmlFileUtilities();
-                            transactions = await xmlUtil.ValidateXmlDocumentAsync(uploadFile, path);
-                            
-                        }
-                        else if (fileType == "csv")
-                        {
-                            CsvFileUtilities xmlUtil = new CsvFileUtilities();
-                            transactions = await xmlUtil.ValidateCsvDocumentAsync(uploadFile, path);
-                        }
-                        else
-                        {
-                            ViewBag.ErrorMessage += string.Format("<b>{0}</b> Unknown format.<br />", fileName);
-                            _logger.LogError("Unknown File format");
-                            return View();
-                        }
-
-
-                        if (IsDataSetValid(transactions))
-                        {
-                            var validTransactions = (from t in transactions
-                                                     select new Transaction
-                                                     {
-                                                         AccountNumber = t.AccountNumber,
-                                                         Amount = t.Amount,
-                                                         CurrencyCode = t.CurrencyCode,
-                                                         Status = t.Status,
-                                                         TransactionDate = t.TransactionDate,
-                                                         TransactionId = t.TransactionId,
-                                                     }).ToList();
-                            if (validTransactions.Any())
-                            {
-                                _repository.AddTransactions(validTransactions);
-                            }
-                            List<string> uploadedFiles = new List<string>();
-                            using (FileStream stream = new FileStream(Path.Combine(path, fileName), FileMode.Create))
-                            {
-                                model.File.CopyTo(stream);
-                                uploadedFiles.Add(fileName);
-                                ViewBag.Message += string.Format("<b>{0}</b> uploaded.<br />", fileName);
-                            }
-                        }
-                    }
-                    return View();
-                }
-
-                ViewBag.ErrorMessage += string.Format("Please select a file.");
-
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e.Message + string.Format("<b>{0} </b> Unknown format.<br /> ", fileName));
-                ViewBag.ErrorMessage += string.Format("<b>{0}</b> Unknown format.<br />", fileName);
-
-            }
-            return View();
-        }
 
         // GET: File/ListFiles
         public IActionResult ListFiles()
@@ -137,6 +48,112 @@ namespace Theunis.Assesment.Web.Controllers
         public IActionResult Error()
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        }
+
+
+        [Authorize]
+        public IActionResult Assesment()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Assesment(FileUploadViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                ViewBag.ErrorMessage = "Invalid file upload request.";
+                return View();
+            }
+
+            string fileName = Path.GetFileName(model.File.FileName);
+            string fileExtension = Path.GetExtension(fileName)?.ToLowerInvariant();
+            string uploadPath = Path.Combine(_environment.WebRootPath, "Uploads");
+
+            try
+            {
+                // Ensure the upload directory exists
+                if (!Directory.Exists(uploadPath))
+                    Directory.CreateDirectory(uploadPath);
+
+                // Validate file
+                if (!IsValidFile(model.File, fileExtension, out string validationMessage))
+                {
+                    ViewBag.ErrorMessage = validationMessage;
+                    return View();
+                }
+
+                // Save file to the server
+                string filePath = Path.Combine(uploadPath, fileName);
+                await using (var fileStream = new FileStream(filePath, FileMode.Create))
+                {
+                    await model.File.CopyToAsync(fileStream);
+                }
+
+                // Process file
+                List<TransactionViewModel> transactions = fileExtension switch
+                {
+                    ".xml" => await new XmlFileUtilities().ValidateXmlDocumentAsync(model.File, uploadPath),
+                    ".csv" => await new CsvFileUtilities().ValidateCsvDocumentAsync(model.File, uploadPath),
+                    _ => throw new NotSupportedException($"Unsupported file type: {fileExtension}")
+                };
+
+                // Validate data
+                if (!IsDataSetValid(transactions, out string dataValidationMessage))
+                {
+                    ViewBag.ErrorMessage = dataValidationMessage;
+                    return View();
+                }
+
+                // Save transactions to the database
+                var validTransactions = transactions.Select(t => new Transaction
+                {
+                    TransactionId = t.TransactionId,
+                    AccountNumber = t.AccountNumber,
+                    Amount = t.Amount,
+                    CurrencyCode = t.CurrencyCode,
+                    Status = t.Status,
+                    TransactionDate = t.TransactionDate
+                }).ToList();
+
+                if (validTransactions.Any())
+                {
+                    _repository.AddTransactions(validTransactions);
+                    ViewBag.Message = $"{fileName} uploaded and processed successfully.";
+                }
+
+                return View();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error processing file {fileName}: {ex.Message}");
+                ViewBag.ErrorMessage = "An error occurred while processing the file.";
+                return View();
+            }
+        }
+
+        private bool IsValidFile(IFormFile file, string fileExtension, out string validationMessage)
+        {
+            validationMessage = string.Empty;
+
+            // Validate file type
+            var allowedExtensions = new[] { ".xml", ".csv" };
+            if (!allowedExtensions.Contains(fileExtension))
+            {
+                validationMessage = $"Unsupported file type: {fileExtension}. Allowed types are XML and CSV.";
+                return false;
+            }
+
+            // Validate file size
+            const int maxFileSizeMb = 1;
+            if (file.Length > maxFileSizeMb * 1024 * 1024)
+            {
+                validationMessage = $"File size exceeds the maximum limit of {maxFileSizeMb} MB.";
+                return false;
+            }
+
+            return true;
         }
 
         public bool CheckFileType(string fileType)
@@ -163,61 +180,31 @@ namespace Theunis.Assesment.Web.Controllers
             return IsValidFileType;
         }
 
-        public bool CheckFileSize(IFormFile file)
+        private bool IsDataSetValid(List<TransactionViewModel> transactions, out string validationMessage)
         {
-            var IsValidTypeSize = false;
-            try
-            {
-                int maxFileSize = 1;
-                var fileSize = file.Length;
-                if (fileSize > (maxFileSize * 1024 * 1024))
-                {
-                    ViewBag.ErrorMessage += string.Format("Maximum file size permitted is <b>{0}</b> MB <br />", maxFileSize);
-                    Utilities.CreateLog(string.Format("Maximum file size permitted is <b>{0}</b> MB <br />", maxFileSize));
-                    return false;
-                }
+            validationMessage = string.Empty;
 
-                return true;
+            var invalidFields = new List<string>();
 
-            }
-            catch (Exception e)
-            {
-                Utilities.CreateLog(e.Message + "CheckFileSize");
-            }
+            if (transactions.Any(t => string.IsNullOrWhiteSpace(t.TransactionId)))
+                invalidFields.Add("TransactionId");
 
-            return IsValidTypeSize;
-        }
+            if (transactions.Any(t => string.IsNullOrWhiteSpace(t.AccountNumber)))
+                invalidFields.Add("AccountNumber");
 
-        public bool IsDataSetValid(List<TransactionViewModel> transactions)
-        {
-            bool isValid = true;
+            if (transactions.Any(t => string.IsNullOrWhiteSpace(t.CurrencyCode)))
+                invalidFields.Add("CurrencyCode");
 
-            var isEmptyTransactionId = (transactions.Where(o => string.IsNullOrEmpty(o.TransactionId))).Count() > 0;
-            if (isEmptyTransactionId)
+            if (transactions.Any(t => string.IsNullOrWhiteSpace(t.Status)))
+                invalidFields.Add("Status");
+
+            if (invalidFields.Any())
             {
-                Utilities.CreateLog("TransactionId is Required");
-                isValid = false;
-            }
-            var isEmptyAccountNumber = (transactions.Where(o => string.IsNullOrEmpty(o.AccountNumber))).Count() > 0;
-            if (isEmptyTransactionId)
-            {
-                Utilities.CreateLog("AccountNumber is Required");
-                isValid = false;
-            }
-            var isEmptyCurrencyCode = (transactions.Where(o => string.IsNullOrEmpty(o.CurrencyCode))).Count() > 0;
-            if (isEmptyCurrencyCode)
-            {
-                Utilities.CreateLog("CurrencyCode is Required");
-                isValid = false;
-            }
-            var isEmptyStatus = (transactions.Where(o => string.IsNullOrEmpty(o.Status))).Count() > 0;
-            if (isEmptyStatus)
-            {
-                Utilities.CreateLog("Status is Required");
-                isValid = false;
+                validationMessage = $"The following fields are required: {string.Join(", ", invalidFields)}.";
+                return false;
             }
 
-            return isValid;
+            return true;
         }
     }
 }

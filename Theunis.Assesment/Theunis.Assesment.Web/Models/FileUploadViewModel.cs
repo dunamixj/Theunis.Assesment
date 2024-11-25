@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using Theunis.Assesment.Web.Data.Models;
 
 namespace Theunis.Assesment.Web.Models
 {
@@ -7,5 +8,6 @@ namespace Theunis.Assesment.Web.Models
         [Required(ErrorMessage = "Please select a file.")]
         [DataType(DataType.Upload)]
         public IFormFile File { get; set; }
+
     }
 }

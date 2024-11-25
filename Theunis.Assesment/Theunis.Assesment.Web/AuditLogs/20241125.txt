@@ -1,0 +1,9 @@
+25-11-2024 8:17:14 AM ==> Invalid data in row: 
+25-11-2024 8:18:25 AM ==> Invalid data in row: 
+25-11-2024 8:20:40 AM ==> Invalid data in row: “Invoice0000001”,”1000.00”, “USD”, “20/02/2019 12:33:16”, “Approved”
+25-11-2024 8:20:40 AM ==> Invalid data in row: “Invoice0000002”,”300.00”,”USD”,”21/02/2019 02:04:59”, “Failed"
+25-11-2024 8:20:40 AM ==> Invalid data in row: “Invoice0000001”,”1000.00”, “USD”, “20/02/2019 12:33:16”, “Approved”
+25-11-2024 8:20:40 AM ==> Invalid data in row: “Invoice0000002”,”300.00”,”USD”,”21/02/2019 02:04:59”, “Failed"
+25-11-2024 8:20:40 AM ==> Invalid data in row: “Invoice0000001”,”1000.00”, “USD”, “20/02/2019 12:33:16”, “Approved”
+25-11-2024 8:20:40 AM ==> Invalid data in row: “Invoice0000002”,”300.00”,”USD”,”21/02/2019 02:04:59”, “Failed"
+25-11-2024 8:20:41 AM ==> Invalid data in row: “Invoice0000001”,”1000.00”, “USD”, “20/02/2019 12:33:16”, “Approved”
